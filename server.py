@@ -2,9 +2,13 @@ from flask import Flask, jsonify, send_from_directory
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import logging
+import os
 from random_comic import MarvelClient
 
-app = Flask(__name__)
+# Create Flask application
+application = Flask(__name__)
+app = application  # For Gunicorn compatibility
+
 app.static_folder = 'public'
 app.static_url_path = '/static'
 
@@ -19,8 +23,8 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-PUBLIC_KEY = "fabd95acbc69b2a8bd1dac47b491bba9"
-PRIVATE_KEY = "e40ac2fcd4746d17684e9acee632fdc30b88d9a7"
+PUBLIC_KEY = os.environ.get('MARVEL_PUBLIC_KEY', "fabd95acbc69b2a8bd1dac47b491bba9")
+PRIVATE_KEY = os.environ.get('MARVEL_PRIVATE_KEY', "e40ac2fcd4746d17684e9acee632fdc30b88d9a7")
 client = MarvelClient(PUBLIC_KEY, PRIVATE_KEY)
 
 @app.route('/')
@@ -35,7 +39,6 @@ def random_comic():
         while True:
             random_year, comic = client.get_random_comic()
             if comic:
-                # Check if comic has valid image URL
                 if (comic.get('thumbnail') and 
                     comic['thumbnail'].get('path') and 
                     comic['thumbnail'].get('extension') and 
@@ -62,6 +65,5 @@ def random_comic():
         }), 500
 
 if __name__ == "__main__":
-    print(f"Server starting at http://192.168.1.154:5001")
-    print(f"Static files served from: {app.static_folder}")
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
