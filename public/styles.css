@@ -1,0 +1,187 @@
+/* General page styling */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #1A1A1A;
+  color: #ffffff;
+  overflow-x: hidden;
+}
+
+/* Title styling */
+h1 {
+  font-size: 2rem;
+  color: #e62429;
+  margin: 0 0 5px 0;
+  text-align: center;
+}
+
+/* Comic container styling */
+#comic-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  max-width: 900px;
+  height: calc(100vh - 120px);
+  margin: 0 auto;
+  padding: 0 40px 40px 40px;
+  overflow: hidden;
+}
+
+/* Comic title styling */
+#comic-title {
+  font-size: 1.2rem;
+  text-align: center;
+  margin: 5px 0;
+  color: #ffffff;
+}
+
+/* Comic cover image styling */
+#comic-cover {
+  max-width: 95%;
+  max-height: calc(100vh - 160px);
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  margin: 5px auto;
+  display: block;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+#comic-cover:hover {
+  transform: scale(1.15);
+  z-index: 2;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
+}
+
+/* Marvel attribution styling */
+#marvel-attribution {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(26, 26, 26, 0.95);
+  padding: 3px 0;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  height: 35px;
+  border-top: 1px solid #333;
+}
+
+.attribution-content {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #ffffff;
+}
+
+#marvel-links {
+  display: inline;
+  margin-left: 10px;
+}
+
+#marvel-links a {
+  color: #e62429;
+  text-decoration: none;
+  margin: 0 10px;
+}
+
+#marvel-links a:hover {
+  text-decoration: underline;
+}
+
+/* Randomize button styling */
+button#randomize-button {
+  background-color: #e62429;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  font-size: 1.1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin: 5px 0;
+  z-index: 3;
+}
+
+button#randomize-button:hover {
+  background-color: #cc1f24;
+}
+
+/* Responsive design */
+/* ...existing code... */
+
+@media (max-width: 768px) {
+  body {
+      padding: 2px;
+  }
+
+  h1 {
+      font-size: 1.6rem;
+      margin-bottom: 3px;
+  }
+  
+  #comic-title {
+      font-size: 1rem;
+  }
+  
+  #comic-container {
+      padding: 0 10px 20px 10px;
+      height: calc(100vh - 100px);
+  }
+
+  #comic-cover {
+      max-width: 100%;
+      max-height: calc(100vh - 130px);
+      margin: 3px auto;
+  }
+  
+  #comic-cover:hover {
+      transform: scale(1.05);  /* Reduced scale for mobile */
+  }
+
+  button#randomize-button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      margin: 3px 0;
+  }
+
+  #marvel-attribution {
+      height: 30px;
+      padding: 2px 0;
+  }
+
+  .attribution-content {
+      font-size: 0.65rem;
+  }
+  
+  #marvel-links a {
+      font-size: 0.65rem;
+      margin: 0 5px;
+  }
+}
+
+/* Additional breakpoint for smaller phones */
+@media (max-width: 380px) {
+  h1 {
+      font-size: 1.4rem;
+  }
+
+  #comic-container {
+      padding: 0 5px 15px 5px;
+  }
+
+  button#randomize-button {
+      padding: 8px 16px;
+  }
+}
+

@@ -1,0 +1,33 @@
+/index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marvel Comic Cover Generator</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h1>Marvel Comic Cover Generator</h1>
+    <button id="randomize-button">Randomize</button>
+    <div id="comic-container">
+        <h2 id="comic-title"></h2>
+        <img id="comic-cover" alt="Comic Cover" style="display: none;" />
+        <div id="comic-details"></div>
+    </div>
+
+    <footer id="marvel-attribution">
+        <div class="attribution-content">
+            <p>
+                <span>Data provided by Marvel. © 2014 Marvel</span>
+                <span id="marvel-links">
+                    <a href="http://marvel.com" target="_blank">Marvel Homepage</a>
+                    <a href="#" id="comic-detail-link" target="_blank" style="display: none;">View Comic Details</a>
+                </span>
+            </p>
+        </div>
+    </footer>
+    <script src="/static/scripts.js"></script>
+</body>
+</html>
+
