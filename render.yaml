@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: marvel-comics
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn server:app
+    envVars:
+      - key: MARVEL_PUBLIC_KEY
+        sync: false
+      - key: MARVEL_PRIVATE_KEY
+        sync: false
