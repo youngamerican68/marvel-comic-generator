@@ -5,7 +5,6 @@ import logging
 import os
 from random_comic import MarvelClient
 
-# Create Flask application
 app = Flask(__name__)
 app.static_folder = 'public'
 app.static_url_path = '/static'
