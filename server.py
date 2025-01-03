@@ -26,8 +26,7 @@ client = MarvelClient(PUBLIC_KEY, PRIVATE_KEY)
 
 @app.route('/')
 def index():
-    logging.info('Serving index.html')
-    return send_from_directory('public', 'index.html')
+    return app.send_static_file('index.html')
 
 @app.route('/random-comic')
 @limiter.limit("1 per second")
