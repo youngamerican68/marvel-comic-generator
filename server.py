@@ -5,10 +5,8 @@ import logging
 import os
 from random_comic import MarvelClient
 
-# Create Flask application instances
+# Create Flask application
 app = Flask(__name__)
-application = app  # For Gunicorn compatibility
-
 app.static_folder = 'public'
 app.static_url_path = '/static'
 
