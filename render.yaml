@@ -3,7 +3,7 @@ services:
     name: marvel-comics
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn "server:app"
+    startCommand: gunicorn server:app
     envVars:
       - key: MARVEL_PUBLIC_KEY
         sync: false
