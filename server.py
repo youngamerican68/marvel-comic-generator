@@ -6,9 +6,7 @@ import os
 from random_comic import MarvelClient
 
 # Create Flask application
-application = Flask(__name__)
-app = application  # For Gunicorn compatibility
-
+app = Flask(__name__)
 app.static_folder = 'public'
 app.static_url_path = '/static'
 
