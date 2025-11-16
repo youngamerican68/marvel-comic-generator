@@ -1,4 +1,3 @@
-/index.html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,6 +9,7 @@
 <body>
     <h1>Marvel Comic Cover Generator</h1>
     <button id="randomize-button">Randomize</button>
+    <div id="loading-spinner" class="spinner" style="display: none;"></div>
     <div id="comic-container">
         <h2 id="comic-title"></h2>
         <img id="comic-cover" alt="Comic Cover" style="display: none;" />
@@ -19,7 +19,7 @@
     <footer id="marvel-attribution">
         <div class="attribution-content">
             <p>
-                <span>Data provided by Marvel. © 2014 Marvel</span>
+                <span>Data provided by Marvel. © <span id="current-year"></span> Marvel</span>
                 <span id="marvel-links">
                     <a href="http://marvel.com" target="_blank">Marvel Homepage</a>
                     <a href="#" id="comic-detail-link" target="_blank" style="display: none;">View Comic Details</a>
@@ -30,4 +30,3 @@
     <script src="/static/scripts.js"></script>
 </body>
 </html>
-
