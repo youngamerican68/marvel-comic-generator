@@ -1,7 +1,8 @@
 """
-Marvel Comic Generator Flask Application
+Comic Cover Generator Flask Application
 
-A web application that displays random Marvel comic covers using the Marvel API.
+A web application that displays random comic covers from all publishers
+using the Comic Vine API.
 Includes rate limiting, error handling, and security features.
 """
 from flask import Flask, jsonify, send_from_directory, request, redirect
@@ -13,7 +14,7 @@ import os
 import sys
 from typing import Dict, Optional, Tuple, Any
 from dotenv import load_dotenv
-from random_comic import MarvelClient
+from comic_client import ComicVineClient
 
 # Load environment variables
 load_dotenv()
@@ -60,16 +61,16 @@ def force_https():
             url = request.url.replace('http://', 'https://', 1)
             return redirect(url, code=301)
 
-# Get API keys from environment variables (required)
-PUBLIC_KEY = os.environ.get('MARVEL_PUBLIC_KEY')
-PRIVATE_KEY = os.environ.get('MARVEL_PRIVATE_KEY')
+# Get API key from environment variable (required)
+API_KEY = os.environ.get('COMIC_VINE_API_KEY')
 
-if not PUBLIC_KEY or not PRIVATE_KEY:
-    logger.error("MARVEL_PUBLIC_KEY and MARVEL_PRIVATE_KEY environment variables are required")
+if not API_KEY:
+    logger.error("COMIC_VINE_API_KEY environment variable is required")
+    logger.error("Get your API key from: https://comicvine.gamespot.com/api/")
     sys.exit(1)
 
-# Initialize Marvel API client
-client = MarvelClient(PUBLIC_KEY, PRIVATE_KEY)
+# Initialize Comic Vine API client
+client = ComicVineClient(API_KEY)
 
 # Configuration constants
 MAX_COMIC_RETRY_ATTEMPTS = 10
@@ -77,45 +78,85 @@ MAX_COMIC_RETRY_ATTEMPTS = 10
 
 def is_valid_comic(comic: Dict[str, Any]) -> bool:
     """
-    Check if a comic has valid thumbnail data.
+    Check if a comic has valid image data.
 
     Args:
-        comic: Comic data dictionary from Marvel API
+        comic: Comic data dictionary from Comic Vine API
 
     Returns:
-        True if comic has valid thumbnail, False otherwise
+        True if comic has valid image, False otherwise
     """
     if not comic:
         return False
 
-    thumbnail = comic.get('thumbnail')
-    if not thumbnail:
+    image = comic.get('image')
+    if not image:
         return False
 
-    path = thumbnail.get('path', '')
-    extension = thumbnail.get('extension')
+    # Check for any valid image URL (prefer medium, but accept others)
+    medium_url = image.get('medium_url', '')
+    small_url = image.get('small_url', '')
+    original_url = image.get('original_url', '')
 
-    return (path and extension and 'image_not_available' not in path)
+    return bool(medium_url or small_url or original_url)
 
 
-def format_comic_response(comic: Dict[str, Any], year: int) -> Dict[str, Any]:
+def format_comic_response(comic: Dict[str, Any], year: Optional[int]) -> Dict[str, Any]:
     """
     Format comic data for API response.
 
     Args:
-        comic: Raw comic data from Marvel API
-        year: Year the comic was published
+        comic: Raw comic data from Comic Vine API
+        year: Year the comic was published (can be None)
 
     Returns:
         Formatted comic data dictionary
     """
-    thumbnail = comic['thumbnail']
+    # Build the title from volume name, issue number, and issue name
+    name = comic.get('name', '')
+    issue_number = comic.get('issue_number', '')
+    volume = comic.get('volume', {})
+    volume_name = volume.get('name', 'Unknown Series') if volume else 'Unknown Series'
+
+    # Format: "Series Name #123 - Issue Name" or variations
+    if issue_number:
+        title = f"{volume_name} #{issue_number}"
+        if name:
+            title += f" - {name}"
+    else:
+        title = volume_name
+        if name:
+            title += f" - {name}"
+
+    # Get the best available image URL
+    image = comic.get('image', {})
+    cover_url = (
+        image.get('medium_url') or
+        image.get('small_url') or
+        image.get('original_url') or
+        ''
+    )
+
+    # Build URL for detail page
+    detail_url = comic.get('site_detail_url', '')
+    urls = []
+    if detail_url:
+        urls.append({
+            'type': 'detail',
+            'url': detail_url
+        })
+
     comic_data = {
-        "title": comic.get("title", "Unknown Title"),
-        "coverUrl": f"{thumbnail['path']}/detail.{thumbnail['extension']}",
-        "urls": comic.get("urls", [])
+        "title": title,
+        "coverUrl": cover_url,
+        "urls": urls
     }
-    return {"year": year, "comic": comic_data}
+
+    response = {"comic": comic_data}
+    if year:
+        response["year"] = year
+
+    return response
 
 
 @app.route('/')
@@ -128,7 +169,7 @@ def index() -> str:
 @limiter.limit("1 per second")
 def random_comic() -> Tuple[Dict[str, Any], int]:
     """
-    Fetch and return a random Marvel comic with valid cover image.
+    Fetch and return a random comic with valid cover image.
 
     Returns:
         JSON response with comic data or error message
@@ -139,16 +180,24 @@ def random_comic() -> Tuple[Dict[str, Any], int]:
         while attempt < MAX_COMIC_RETRY_ATTEMPTS:
             attempt += 1
 
-            random_year, comic = client.get_random_comic()
+            year, comic = client.get_random_comic()
 
             if is_valid_comic(comic):
-                logger.info(f"Found valid comic: {comic.get('title')} from {random_year}")
-                return jsonify(format_comic_response(comic, random_year)), 200
+                # Build title for logging
+                title = comic.get('name', 'Unknown')
+                volume = comic.get('volume', {})
+                if volume:
+                    volume_name = volume.get('name', '')
+                    if volume_name:
+                        title = f"{volume_name} - {title}"
+
+                logger.info(f"Found valid comic: {title}" + (f" from {year}" if year else ""))
+                return jsonify(format_comic_response(comic, year)), 200
 
             if comic:
-                logger.debug(f"Skipping comic with invalid image: {comic.get('title')}")
+                logger.debug(f"Skipping comic with invalid image")
             else:
-                logger.debug(f"No comic found for year {random_year}")
+                logger.debug(f"No comic found at this offset")
 
         # Max attempts reached
         logger.warning(f"Could not find valid comic after {MAX_COMIC_RETRY_ATTEMPTS} attempts")

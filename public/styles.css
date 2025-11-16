@@ -20,6 +20,15 @@ h1 {
   text-align: center;
 }
 
+/* Subtitle styling */
+.subtitle {
+  font-size: 0.9rem;
+  color: #cccccc;
+  margin: 0 0 10px 0;
+  text-align: center;
+  font-style: italic;
+}
+
 /* Comic container styling */
 #comic-container {
   display: flex;
@@ -62,8 +71,8 @@ h1 {
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
 }
 
-/* Marvel attribution styling */
-#marvel-attribution {
+/* Attribution styling */
+#attribution {
   position: fixed;
   bottom: 0;
   left: 0;
@@ -84,18 +93,18 @@ h1 {
   color: #ffffff;
 }
 
-#marvel-links {
+#links {
   display: inline;
   margin-left: 10px;
 }
 
-#marvel-links a {
+#links a {
   color: #e62429;
   text-decoration: none;
   margin: 0 10px;
 }
 
-#marvel-links a:hover {
+#links a:hover {
   text-decoration: underline;
 }
 
@@ -176,7 +185,7 @@ button#randomize-button:disabled {
       margin: 3px 0;
   }
 
-  #marvel-attribution {
+  #attribution {
       height: 30px;
       padding: 2px 0;
   }
@@ -184,10 +193,15 @@ button#randomize-button:disabled {
   .attribution-content {
       font-size: 0.65rem;
   }
-  
-  #marvel-links a {
+
+  #links a {
       font-size: 0.65rem;
       margin: 0 5px;
+  }
+
+  .subtitle {
+      font-size: 0.75rem;
+      margin: 0 0 5px 0;
   }
 }
 

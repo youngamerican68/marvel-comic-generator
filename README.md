@@ -1,21 +1,24 @@
-# Marvel Comic Cover Generator
+# Comic Cover Generator
 
-A web application that displays random Marvel comic covers using the Marvel Comics API. Built with Flask, featuring a responsive UI, rate limiting, and comprehensive error handling.
+A web application that displays random comic book covers from all publishers using the Comic Vine API. Built with Flask, featuring a responsive UI, rate limiting, and comprehensive error handling.
+
+Discover covers from Marvel, DC Comics, Image, Dark Horse, and many more publishers!
 
 ## Features
 
-- **Random Comic Discovery**: Browse random Marvel comics from 1960-2023
+- **Random Comic Discovery**: Browse random comic covers from across the entire comic book industry
+- **All Publishers**: Not just Marvel - includes DC, Image, Dark Horse, IDW, and hundreds more
 - **Responsive Design**: Optimized for desktop and mobile devices
 - **Rate Limiting**: Prevents API abuse with configurable limits
 - **Error Handling**: Robust error handling with retry logic
 - **Security**: HTTPS enforcement, CORS support, and secure API key management
 - **Loading States**: Visual feedback with animated spinner
-- **Marvel Attribution**: Proper attribution with links to Marvel resources
+- **Proper Attribution**: Links to Comic Vine for detailed information
 
 ## Prerequisites
 
 - Python 3.7+
-- Marvel API Keys (get them from [Marvel Developer Portal](https://developer.marvel.com/))
+- Comic Vine API Key (get one from [Comic Vine API](https://comicvine.gamespot.com/api/))
 
 ## Installation
 
@@ -45,10 +48,9 @@ A web application that displays random Marvel comic covers using the Marvel Comi
    cp .env.example .env
    ```
 
-   Edit `.env` and add your Marvel API keys:
+   Edit `.env` and add your Comic Vine API key:
    ```
-   MARVEL_PUBLIC_KEY=your_public_key_here
-   MARVEL_PRIVATE_KEY=your_private_key_here
+   COMIC_VINE_API_KEY=your_api_key_here
    LOG_LEVEL=INFO
    FLASK_ENV=development
    ```
@@ -59,6 +61,15 @@ A web application that displays random Marvel comic covers using the Marvel Comi
    ```
 
    The app will be available at `http://localhost:5000`
+
+### Getting a Comic Vine API Key
+
+1. Go to [https://comicvine.gamespot.com/api/](https://comicvine.gamespot.com/api/)
+2. Sign up or log in with your GameSpot/Comic Vine account
+3. Once logged in, your API key will be displayed
+4. Copy the API key and add it to your `.env` file
+
+**Note**: Comic Vine API has a rate limit of 200 requests per resource per hour.
 
 ### Production Deployment
 
@@ -76,8 +87,7 @@ A web application that displays random Marvel comic covers using the Marvel Comi
 
 3. **Set environment variables**
    ```bash
-   heroku config:set MARVEL_PUBLIC_KEY=your_public_key
-   heroku config:set MARVEL_PRIVATE_KEY=your_private_key
+   heroku config:set COMIC_VINE_API_KEY=your_api_key
    heroku config:set FLASK_ENV=production
    heroku config:set LOG_LEVEL=WARNING
    ```
@@ -94,8 +104,7 @@ A web application that displays random Marvel comic covers using the Marvel Comi
 2. **Connect your repository**
 
 3. **Configure environment variables** in the Render dashboard:
-   - `MARVEL_PUBLIC_KEY`
-   - `MARVEL_PRIVATE_KEY`
+   - `COMIC_VINE_API_KEY`
    - `FLASK_ENV=production`
    - `LOG_LEVEL=WARNING`
 
@@ -109,8 +118,7 @@ The application will automatically use the configuration from `render.yaml`.
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `MARVEL_PUBLIC_KEY` | Yes | - | Your Marvel API public key |
-| `MARVEL_PRIVATE_KEY` | Yes | - | Your Marvel API private key |
+| `COMIC_VINE_API_KEY` | Yes | - | Your Comic Vine API key |
 | `FLASK_ENV` | No | `development` | Environment mode (`development` or `production`) |
 | `LOG_LEVEL` | No | `INFO` | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
 | `PORT` | No | `5000` | Port for the Flask server |
@@ -120,6 +128,8 @@ The application will automatically use the configuration from `render.yaml`.
 The application includes rate limiting to prevent API abuse:
 - **Global limits**: 200 requests per day, 50 per hour
 - **Random comic endpoint**: 1 request per second
+
+**Important**: Comic Vine's API allows 200 requests per resource per hour. The application is configured to stay well within these limits.
 
 For production deployments with multiple workers (Gunicorn), consider using Redis for rate limit storage:
 
@@ -140,19 +150,19 @@ limiter = Limiter(
 Serves the main HTML page.
 
 ### `GET /random-comic`
-Fetches a random Marvel comic with a valid cover image.
+Fetches a random comic with a valid cover image.
 
 **Response:**
 ```json
 {
   "year": 2015,
   "comic": {
-    "title": "Amazing Spider-Man (2015) #1",
-    "coverUrl": "http://i.annihil.us/u/prod/marvel/i/mg/.../detail.jpg",
+    "title": "The Amazing Spider-Man #1 - Lucky to Be Alive",
+    "coverUrl": "https://comicvine.gamespot.com/a/uploads/.../medium.jpg",
     "urls": [
       {
         "type": "detail",
-        "url": "http://marvel.com/comics/..."
+        "url": "https://comicvine.gamespot.com/..."
       }
     ]
   }
@@ -186,7 +196,8 @@ marvel-comic-generator/
 │   ├── scripts.js      # Frontend JavaScript
 │   └── styles.css      # CSS styles
 ├── server.py           # Flask application
-├── random_comic.py     # Marvel API client
+├── comic_client.py     # Comic Vine API client
+├── random_comic.py     # (deprecated - kept for reference)
 ├── requirements.txt    # Python dependencies
 ├── Procfile           # Heroku deployment config
 ├── render.yaml        # Render deployment config
@@ -226,35 +237,58 @@ Type hints are included throughout. Use `mypy` for type checking:
 
 ```bash
 pip install mypy
-mypy server.py random_comic.py
+mypy server.py comic_client.py
 ```
+
+## How It Works
+
+1. **Random Selection**: The app uses a random offset to fetch comics from Comic Vine's database of 800,000+ issues
+2. **Image Validation**: Each comic is checked to ensure it has a valid cover image
+3. **Retry Logic**: If a comic doesn't have a valid image, the app tries again (up to 10 attempts)
+4. **Title Formatting**: Combines series name, issue number, and issue name for display
+5. **Best Image**: Selects the best available image quality (medium preferred)
 
 ## Security Considerations
 
 1. **Never commit API keys** to version control
 2. **Use environment variables** for all sensitive data
 3. **Enable HTTPS** in production (automatically enforced)
-4. **Rate limiting** prevents API abuse
+4. **Rate limiting** prevents API abuse and respects Comic Vine's limits
 5. **Error messages** don't expose sensitive information
 6. **CORS** is configured for cross-origin requests
 
 ## Troubleshooting
 
-### "MARVEL_PUBLIC_KEY and MARVEL_PRIVATE_KEY environment variables are required"
+### "COMIC_VINE_API_KEY environment variable is required"
 
-Make sure you've created a `.env` file with your API keys, or set them as environment variables.
+Make sure you've created a `.env` file with your API key, or set it as an environment variable.
 
-### Rate Limit Errors (429)
+### Rate Limit Errors (420)
 
-Wait for the rate limit window to expire, or adjust the limits in `server.py`.
+Comic Vine limits to 200 requests per resource per hour. Wait for the rate limit window to expire, or adjust usage patterns.
 
 ### "No comic found" messages
 
-The API occasionally returns comics without valid images. The app automatically retries up to 10 times to find a valid comic.
+The API occasionally returns offsets with no results. The app automatically retries up to 10 times to find a valid comic.
 
 ### Connection timeouts
 
-Check your internet connection and Marvel API status. The app has built-in retry logic with 10-second timeouts.
+Check your internet connection and Comic Vine API status. The app has built-in retry logic with 10-second timeouts.
+
+### Missing images or broken image links
+
+Some comics in the database don't have cover images. The app filters these out, but if you see a broken image, click "Randomize" again.
+
+## API Attribution
+
+This application uses the [Comic Vine API](https://comicvine.gamespot.com/api/).
+
+**Comic Vine** is a comprehensive comic book database owned by Fandom/GameSpot that provides data on:
+- Comic book issues, volumes, and series
+- Characters, creators, and publishers
+- Cover images and detailed metadata
+
+All comic data and images are © their respective publishers and creators.
 
 ## Contributing
 
@@ -266,17 +300,26 @@ Check your internet connection and Marvel API status. The app has built-in retry
 
 ## License
 
-This project is for educational purposes. All Marvel characters and comics are © Marvel.
+This project is for educational purposes. All comic book characters, covers, and related content are © their respective publishers and creators.
 
 ## Acknowledgments
 
-- Data provided by [Marvel](http://marvel.com). © 2025 Marvel
+- Data provided by [Comic Vine](https://comicvine.gamespot.com/) / Fandom
 - Built with [Flask](https://flask.palletsprojects.com/)
-- Marvel API documentation: [developer.marvel.com](https://developer.marvel.com/)
+- Comic Vine API documentation: [comicvine.gamespot.com/api](https://comicvine.gamespot.com/api/)
 
 ## Support
 
 For issues and questions:
 - Check the [Troubleshooting](#troubleshooting) section
-- Review [Marvel API Documentation](https://developer.marvel.com/docs)
+- Review [Comic Vine API Documentation](https://comicvine.gamespot.com/api/documentation)
 - Open an issue in the repository
+
+## What's New
+
+### v2.0 - Comic Vine Migration
+- **Switched from Marvel API to Comic Vine API** - Marvel API is no longer accessible
+- **Multi-publisher support** - Now displays comics from Marvel, DC, Image, Dark Horse, and hundreds more
+- **Enhanced comic title formatting** - Better display of series name, issue number, and title
+- **Improved image selection** - Uses best available image quality
+- All security and code quality improvements from v1.0 maintained
