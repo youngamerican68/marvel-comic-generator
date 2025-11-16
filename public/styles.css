@@ -117,6 +117,27 @@ button#randomize-button:hover {
   background-color: #cc1f24;
 }
 
+button#randomize-button:disabled {
+  background-color: #999;
+  cursor: not-allowed;
+}
+
+/* Loading spinner */
+.spinner {
+  border: 4px solid rgba(230, 36, 41, 0.2);
+  border-top: 4px solid #e62429;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 10px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* Responsive design */
 /* ...existing code... */
 
