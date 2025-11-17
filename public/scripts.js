@@ -1,7 +1,40 @@
+// Current mode: 'comic' or 'anime'
+let currentMode = 'comic';
+
 // Set current year for copyright
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('current-year').textContent = new Date().getFullYear();
+  updateModeUI();
 });
+
+// Handle mode toggle
+document.getElementById('mode-toggle').addEventListener('change', (e) => {
+  currentMode = e.target.checked ? 'anime' : 'comic';
+  updateModeUI();
+});
+
+function updateModeUI() {
+  const modeLabels = document.querySelectorAll('.mode-label');
+  const attributionText = document.getElementById('attribution-text');
+  const sourceLink = document.getElementById('source-link');
+  const currentYear = new Date().getFullYear();
+
+  if (currentMode === 'anime') {
+    // Anime mode
+    modeLabels[0].classList.remove('active');
+    modeLabels[1].classList.add('active');
+    attributionText.innerHTML = `Data provided by MyAnimeList (via Jikan API). © ${currentYear}`;
+    sourceLink.href = 'https://myanimelist.net';
+    sourceLink.textContent = 'MyAnimeList';
+  } else {
+    // Comic mode
+    modeLabels[0].classList.add('active');
+    modeLabels[1].classList.remove('active');
+    attributionText.innerHTML = `Data provided by Comic Vine. © <span id="current-year">${currentYear}</span>`;
+    sourceLink.href = 'https://comicvine.gamespot.com';
+    sourceLink.textContent = 'Comic Vine';
+  }
+}
 
 document.getElementById('randomize-button').addEventListener('click', async () => {
   const titleElement = document.getElementById('comic-title');
@@ -17,8 +50,11 @@ document.getElementById('randomize-button').addEventListener('click', async () =
   coverElement.style.display = 'none';
   detailLink.style.display = 'none';
 
+  // Determine which endpoint to call
+  const endpoint = currentMode === 'anime' ? '/random-anime' : '/random-comic';
+
   try {
-      const response = await fetch('/random-comic');
+      const response = await fetch(endpoint);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -31,6 +67,7 @@ document.getElementById('randomize-button').addEventListener('click', async () =
           // Update only essential elements
           titleElement.textContent = data.comic.title;
           coverElement.src = data.comic.coverUrl;
+          coverElement.alt = currentMode === 'anime' ? 'Anime Cover' : 'Comic Cover';
           coverElement.style.display = 'block';
 
           // Update detail link if available
@@ -42,11 +79,11 @@ document.getElementById('randomize-button').addEventListener('click', async () =
               }
           }
       } else {
-          titleElement.textContent = 'No comic found';
+          titleElement.textContent = `No ${currentMode} found`;
       }
   } catch (error) {
       console.error('Error:', error);
-      titleElement.textContent = error.message || 'Error loading comic. Please try again.';
+      titleElement.textContent = error.message || `Error loading ${currentMode}. Please try again.`;
   } finally {
       // Hide loading state
       spinner.style.display = 'none';

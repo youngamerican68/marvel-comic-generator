@@ -3,11 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marvel Comic Cover Generator</title>
+    <title>Cover Generator</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <h1>Marvel Comic Cover Generator</h1>
+    <h1 id="main-title">Cover Generator</h1>
+    <p class="subtitle" id="subtitle">Discover random comic and anime covers!</p>
+
+    <!-- Mode Toggle -->
+    <div class="mode-toggle">
+        <span class="mode-label">Comics</span>
+        <label class="switch">
+            <input type="checkbox" id="mode-toggle">
+            <span class="slider"></span>
+        </label>
+        <span class="mode-label">Anime</span>
+    </div>
+
     <button id="randomize-button">Randomize</button>
     <div id="loading-spinner" class="spinner" style="display: none;"></div>
     <div id="comic-container">
@@ -16,13 +28,13 @@
         <div id="comic-details"></div>
     </div>
 
-    <footer id="marvel-attribution">
+    <footer id="attribution">
         <div class="attribution-content">
             <p>
-                <span>Data provided by Marvel. © <span id="current-year"></span> Marvel</span>
-                <span id="marvel-links">
-                    <a href="http://marvel.com" target="_blank">Marvel Homepage</a>
-                    <a href="#" id="comic-detail-link" target="_blank" style="display: none;">View Comic Details</a>
+                <span id="attribution-text">Data provided by Comic Vine. © <span id="current-year"></span></span>
+                <span id="links">
+                    <a href="https://comicvine.gamespot.com" target="_blank" id="source-link">Comic Vine</a>
+                    <a href="#" id="comic-detail-link" target="_blank" style="display: none;">View Details</a>
                 </span>
             </p>
         </div>
