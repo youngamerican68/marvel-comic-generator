@@ -1,8 +1,8 @@
 """
-Comic Cover Generator Flask Application
+Comic & Anime Cover Generator Flask Application
 
-A web application that displays random comic covers from all publishers
-using the Comic Vine API.
+A web application that displays random comic covers (Comic Vine API)
+and anime covers (Jikan/MyAnimeList API).
 Includes rate limiting, error handling, and security features.
 """
 from flask import Flask, jsonify, send_from_directory, request, redirect
@@ -15,6 +15,7 @@ import sys
 from typing import Dict, Optional, Tuple, Any
 from dotenv import load_dotenv
 from comic_client import ComicVineClient
+from anime_client import JikanClient
 
 # Load environment variables
 load_dotenv()
@@ -61,19 +62,24 @@ def force_https():
             url = request.url.replace('http://', 'https://', 1)
             return redirect(url, code=301)
 
-# Get API key from environment variable (required)
-API_KEY = os.environ.get('COMIC_VINE_API_KEY')
+# Get API key from environment variable (optional for anime-only mode)
+COMIC_VINE_API_KEY = os.environ.get('COMIC_VINE_API_KEY')
 
-if not API_KEY:
-    logger.error("COMIC_VINE_API_KEY environment variable is required")
-    logger.error("Get your API key from: https://comicvine.gamespot.com/api/")
-    sys.exit(1)
+# Initialize clients
+comic_client = None
+if COMIC_VINE_API_KEY:
+    comic_client = ComicVineClient(COMIC_VINE_API_KEY)
+    logger.info("Comic Vine client initialized")
+else:
+    logger.warning("COMIC_VINE_API_KEY not set - comic mode disabled")
+    logger.warning("Get your API key from: https://comicvine.gamespot.com/api/")
 
-# Initialize Comic Vine API client
-client = ComicVineClient(API_KEY)
+# Initialize Jikan client (no API key needed!)
+anime_client = JikanClient()
+logger.info("Jikan anime client initialized")
 
 # Configuration constants
-MAX_COMIC_RETRY_ATTEMPTS = 10
+MAX_RETRY_ATTEMPTS = 10
 
 
 def is_valid_comic(comic: Dict[str, Any]) -> bool:
@@ -159,6 +165,72 @@ def format_comic_response(comic: Dict[str, Any], year: Optional[int]) -> Dict[st
     return response
 
 
+def is_valid_anime(anime: Dict[str, Any]) -> bool:
+    """
+    Check if an anime has valid image data.
+
+    Args:
+        anime: Anime data dictionary from Jikan API
+
+    Returns:
+        True if anime has valid image, False otherwise
+    """
+    if not anime:
+        return False
+
+    images = anime.get('images')
+    if not images:
+        return False
+
+    jpg_images = images.get('jpg', {})
+    return bool(jpg_images.get('large_image_url') or jpg_images.get('image_url'))
+
+
+def format_anime_response(anime: Dict[str, Any], year: Optional[int]) -> Dict[str, Any]:
+    """
+    Format anime data for API response.
+
+    Args:
+        anime: Raw anime data from Jikan API
+        year: Year the anime aired (can be None)
+
+    Returns:
+        Formatted anime data dictionary
+    """
+    # Get title (prefer English, fallback to romaji)
+    title = anime.get('title_english') or anime.get('title') or 'Unknown Anime'
+
+    # Get the best available image URL
+    images = anime.get('images', {})
+    jpg_images = images.get('jpg', {})
+    cover_url = (
+        jpg_images.get('large_image_url') or
+        jpg_images.get('image_url') or
+        ''
+    )
+
+    # Build URL for MyAnimeList page
+    mal_url = anime.get('url', '')
+    urls = []
+    if mal_url:
+        urls.append({
+            'type': 'detail',
+            'url': mal_url
+        })
+
+    anime_data = {
+        "title": title,
+        "coverUrl": cover_url,
+        "urls": urls
+    }
+
+    response = {"comic": anime_data}  # Keep key as "comic" for frontend compatibility
+    if year:
+        response["year"] = year
+
+    return response
+
+
 @app.route('/')
 def index() -> str:
     """Serve the main page."""
@@ -174,13 +246,20 @@ def random_comic() -> Tuple[Dict[str, Any], int]:
     Returns:
         JSON response with comic data or error message
     """
+    # Check if comic client is available
+    if not comic_client:
+        return jsonify({
+            "error": "Comic mode not available",
+            "message": "COMIC_VINE_API_KEY not configured. Get your API key from https://comicvine.gamespot.com/api/"
+        }), 503
+
     attempt = 0
 
     try:
-        while attempt < MAX_COMIC_RETRY_ATTEMPTS:
+        while attempt < MAX_RETRY_ATTEMPTS:
             attempt += 1
 
-            year, comic = client.get_random_comic()
+            year, comic = comic_client.get_random_comic()
 
             if is_valid_comic(comic):
                 # Build title for logging
@@ -200,7 +279,7 @@ def random_comic() -> Tuple[Dict[str, Any], int]:
                 logger.debug(f"No comic found at this offset")
 
         # Max attempts reached
-        logger.warning(f"Could not find valid comic after {MAX_COMIC_RETRY_ATTEMPTS} attempts")
+        logger.warning(f"Could not find valid comic after {MAX_RETRY_ATTEMPTS} attempts")
         return jsonify({
             "error": "Could not find a comic with a valid cover image",
             "message": "Please try again"
@@ -212,6 +291,51 @@ def random_comic() -> Tuple[Dict[str, Any], int]:
         return jsonify({
             "error": "Failed to fetch comic",
             "message": "An error occurred while fetching the comic. Please try again later."
+        }), 500
+
+
+@app.route('/random-anime')
+@limiter.limit("1 per second")
+def random_anime() -> Tuple[Dict[str, Any], int]:
+    """
+    Fetch and return a random anime with valid cover image.
+
+    Returns:
+        JSON response with anime data or error message
+    """
+    attempt = 0
+
+    try:
+        while attempt < MAX_RETRY_ATTEMPTS:
+            attempt += 1
+
+            year, anime = anime_client.get_random_anime()
+
+            if is_valid_anime(anime):
+                # Get title for logging
+                title = anime.get('title_english') or anime.get('title', 'Unknown')
+
+                logger.info(f"Found valid anime: {title}" + (f" from {year}" if year else ""))
+                return jsonify(format_anime_response(anime, year)), 200
+
+            if anime:
+                logger.debug(f"Skipping anime with invalid image")
+            else:
+                logger.debug(f"No anime found")
+
+        # Max attempts reached
+        logger.warning(f"Could not find valid anime after {MAX_RETRY_ATTEMPTS} attempts")
+        return jsonify({
+            "error": "Could not find an anime with a valid cover image",
+            "message": "Please try again"
+        }), 404
+
+    except Exception as e:
+        # Log full error server-side, return generic message to client
+        logger.error(f'Error fetching anime: {str(e)}', exc_info=True)
+        return jsonify({
+            "error": "Failed to fetch anime",
+            "message": "An error occurred while fetching the anime. Please try again later."
         }), 500
 
 

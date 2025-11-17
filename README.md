@@ -1,24 +1,31 @@
-# Comic Cover Generator
+# Cover Generator - Comics & Anime
 
-A web application that displays random comic book covers from all publishers using the Comic Vine API. Built with Flask, featuring a responsive UI, rate limiting, and comprehensive error handling.
+A web application that displays random comic book and anime covers using the Comic Vine API and Jikan (MyAnimeList) API. Built with Flask, featuring a responsive UI, dual-mode toggle, rate limiting, and comprehensive error handling.
 
-Discover covers from Marvel, DC Comics, Image, Dark Horse, and many more publishers!
+**Toggle between Comic Mode and Anime Mode with a single switch!**
+
+Discover:
+- 📚 **Comics** from Marvel, DC, Image, Dark Horse, IDW, and hundreds more publishers
+- 🎌 **Anime** from MyAnimeList's vast database of anime series and movies
 
 ## Features
 
-- **Random Comic Discovery**: Browse random comic covers from across the entire comic book industry
-- **All Publishers**: Not just Marvel - includes DC, Image, Dark Horse, IDW, and hundreds more
+- **Dual Mode Toggle**: Instantly switch between comics and anime with a sleek toggle switch
+- **Random Discovery**: Browse random covers from either comics or anime
+- **Comics Mode**: Access to 800,000+ comic issues from all publishers via Comic Vine API
+- **Anime Mode**: Access to MyAnimeList's comprehensive anime database via Jikan API (NO API KEY NEEDED!)
 - **Responsive Design**: Optimized for desktop and mobile devices
 - **Rate Limiting**: Prevents API abuse with configurable limits
 - **Error Handling**: Robust error handling with retry logic
 - **Security**: HTTPS enforcement, CORS support, and secure API key management
 - **Loading States**: Visual feedback with animated spinner
-- **Proper Attribution**: Links to Comic Vine for detailed information
+- **Dynamic Attribution**: Attribution updates based on current mode
 
 ## Prerequisites
 
 - Python 3.7+
-- Comic Vine API Key (get one from [Comic Vine API](https://comicvine.gamespot.com/api/))
+- **Optional**: Comic Vine API Key for comic mode ([get one here](https://comicvine.gamespot.com/api/))
+- **Anime mode works without any API key!**
 
 ## Installation
 
@@ -41,19 +48,23 @@ Discover covers from Marvel, DC Comics, Image, Dark Horse, and many more publish
    pip install -r requirements.txt
    ```
 
-4. **Set up environment variables**
+4. **Set up environment variables (Optional)**
 
    Create a `.env` file in the project root:
    ```bash
    cp .env.example .env
    ```
 
-   Edit `.env` and add your Comic Vine API key:
+   Edit `.env`:
    ```
+   # Optional - only needed for comic mode
    COMIC_VINE_API_KEY=your_api_key_here
+
    LOG_LEVEL=INFO
    FLASK_ENV=development
    ```
+
+   **Note**: If you don't set `COMIC_VINE_API_KEY`, the app will still work in anime-only mode!
 
 5. **Run the application**
    ```bash
@@ -62,14 +73,20 @@ Discover covers from Marvel, DC Comics, Image, Dark Horse, and many more publish
 
    The app will be available at `http://localhost:5000`
 
-### Getting a Comic Vine API Key
+### Getting API Keys
+
+#### Comic Vine (Optional - for Comic Mode)
 
 1. Go to [https://comicvine.gamespot.com/api/](https://comicvine.gamespot.com/api/)
 2. Sign up or log in with your GameSpot/Comic Vine account
 3. Once logged in, your API key will be displayed
 4. Copy the API key and add it to your `.env` file
 
-**Note**: Comic Vine API has a rate limit of 200 requests per resource per hour.
+**Rate Limit**: 200 requests per resource per hour
+
+#### Jikan/MyAnimeList (Anime Mode - No Key Needed!)
+
+Anime mode uses the free Jikan API which doesn't require any authentication. Just toggle to anime mode and start discovering!
 
 ### Production Deployment
 
@@ -85,8 +102,9 @@ Discover covers from Marvel, DC Comics, Image, Dark Horse, and many more publish
    heroku create your-app-name
    ```
 
-3. **Set environment variables**
+3. **Set environment variables (optional)**
    ```bash
+   # Only set if you want comic mode enabled
    heroku config:set COMIC_VINE_API_KEY=your_api_key
    heroku config:set FLASK_ENV=production
    heroku config:set LOG_LEVEL=WARNING
@@ -103,14 +121,12 @@ Discover covers from Marvel, DC Comics, Image, Dark Horse, and many more publish
 
 2. **Connect your repository**
 
-3. **Configure environment variables** in the Render dashboard:
-   - `COMIC_VINE_API_KEY`
+3. **Configure environment variables** (optional):
+   - `COMIC_VINE_API_KEY` (only if you want comic mode)
    - `FLASK_ENV=production`
    - `LOG_LEVEL=WARNING`
 
 4. **Deploy** using the `render.yaml` configuration
-
-The application will automatically use the configuration from `render.yaml`.
 
 ## Configuration
 
@@ -118,36 +134,37 @@ The application will automatically use the configuration from `render.yaml`.
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `COMIC_VINE_API_KEY` | Yes | - | Your Comic Vine API key |
+| `COMIC_VINE_API_KEY` | **No** | - | Your Comic Vine API key (only needed for comic mode) |
 | `FLASK_ENV` | No | `development` | Environment mode (`development` or `production`) |
 | `LOG_LEVEL` | No | `INFO` | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
 | `PORT` | No | `5000` | Port for the Flask server |
+
+### Modes
+
+#### Comic Mode
+- Uses Comic Vine API
+- Requires API key (free signup)
+- 800,000+ comic issues
+- Rate limit: 200 requests per hour
+
+#### Anime Mode
+- Uses Jikan API (MyAnimeList)
+- **No API key required!**
+- Comprehensive anime database
+- Rate limit: ~60 requests per minute
 
 ### Rate Limiting
 
 The application includes rate limiting to prevent API abuse:
 - **Global limits**: 200 requests per day, 50 per hour
-- **Random comic endpoint**: 1 request per second
+- **Random endpoint**: 1 request per second
 
-**Important**: Comic Vine's API allows 200 requests per resource per hour. The application is configured to stay well within these limits.
-
-For production deployments with multiple workers (Gunicorn), consider using Redis for rate limit storage:
-
-```python
-# Uncomment in server.py
-from limits.storage import RedisStorage
-limiter = Limiter(
-    app=app,
-    key_func=get_remote_address,
-    storage_uri="redis://localhost:6379",
-    default_limits=["200 per day", "50 per hour"]
-)
-```
+For production deployments with multiple workers (Gunicorn), consider using Redis for rate limit storage.
 
 ## API Endpoints
 
 ### `GET /`
-Serves the main HTML page.
+Serves the main HTML page with mode toggle.
 
 ### `GET /random-comic`
 Fetches a random comic with a valid cover image.
@@ -169,34 +186,42 @@ Fetches a random comic with a valid cover image.
 }
 ```
 
-**Error Response:**
-```json
-{
-  "error": "Failed to fetch comic",
-  "message": "An error occurred while fetching the comic. Please try again later."
-}
-```
-
-### `GET /health`
-Health check endpoint for monitoring.
+### `GET /random-anime`
+Fetches a random anime with a valid cover image.
 
 **Response:**
 ```json
 {
-  "status": "healthy"
+  "year": 2023,
+  "comic": {
+    "title": "Demon Slayer: Kimetsu no Yaiba",
+    "coverUrl": "https://cdn.myanimelist.net/images/anime/.../l.jpg",
+    "urls": [
+      {
+        "type": "detail",
+        "url": "https://myanimelist.net/anime/..."
+      }
+    ]
+  }
 }
 ```
+
+**Note**: The response key is `"comic"` for both modes for frontend compatibility.
+
+### `GET /health`
+Health check endpoint for monitoring.
 
 ## Project Structure
 
 ```
 marvel-comic-generator/
 ├── public/              # Static frontend files
-│   ├── index.html      # Main HTML page
-│   ├── scripts.js      # Frontend JavaScript
-│   └── styles.css      # CSS styles
-├── server.py           # Flask application
+│   ├── index.html      # Main HTML page with toggle
+│   ├── scripts.js      # Frontend JavaScript (mode switching)
+│   └── styles.css      # CSS styles with toggle switch
+├── server.py           # Flask application (dual-mode support)
 ├── comic_client.py     # Comic Vine API client
+├── anime_client.py     # Jikan/MyAnimeList API client
 ├── random_comic.py     # (deprecated - kept for reference)
 ├── requirements.txt    # Python dependencies
 ├── Procfile           # Heroku deployment config
@@ -206,89 +231,65 @@ marvel-comic-generator/
 └── README.md          # This file
 ```
 
-## Development
-
-### Running Tests
-
-```bash
-# Install development dependencies
-pip install pytest pytest-cov
-
-# Run tests
-pytest
-
-# Run with coverage
-pytest --cov=. --cov-report=html
-```
-
-### Code Style
-
-The project follows PEP 8 guidelines. Use tools like `black` and `flake8`:
-
-```bash
-pip install black flake8
-black .
-flake8 .
-```
-
-### Type Checking
-
-Type hints are included throughout. Use `mypy` for type checking:
-
-```bash
-pip install mypy
-mypy server.py comic_client.py
-```
-
 ## How It Works
 
-1. **Random Selection**: The app uses a random offset to fetch comics from Comic Vine's database of 800,000+ issues
-2. **Image Validation**: Each comic is checked to ensure it has a valid cover image
-3. **Retry Logic**: If a comic doesn't have a valid image, the app tries again (up to 10 attempts)
-4. **Title Formatting**: Combines series name, issue number, and issue name for display
-5. **Best Image**: Selects the best available image quality (medium preferred)
+### Comic Mode
+1. Fetches random comics from Comic Vine's database using random offset
+2. Validates cover image availability
+3. Formats title from series name, issue number, and issue name
+4. Retries up to 10 times if no valid image found
+
+### Anime Mode
+1. Uses Jikan API's `/random/anime` endpoint
+2. Validates cover image availability
+3. Prefers English titles when available
+4. No API key authentication required!
 
 ## Security Considerations
 
-1. **Never commit API keys** to version control
+1. **API keys optional** - Anime mode requires no keys
 2. **Use environment variables** for all sensitive data
 3. **Enable HTTPS** in production (automatically enforced)
-4. **Rate limiting** prevents API abuse and respects Comic Vine's limits
+4. **Rate limiting** prevents API abuse
 5. **Error messages** don't expose sensitive information
 6. **CORS** is configured for cross-origin requests
 
 ## Troubleshooting
 
-### "COMIC_VINE_API_KEY environment variable is required"
+### "Comic mode not available"
 
-Make sure you've created a `.env` file with your API key, or set it as an environment variable.
+This means `COMIC_VINE_API_KEY` is not set. Either:
+- Add your Comic Vine API key to `.env`
+- Or just use anime mode (no key needed!)
 
-### Rate Limit Errors (420)
+### Anime mode works but comics don't
 
-Comic Vine limits to 200 requests per resource per hour. Wait for the rate limit window to expire, or adjust usage patterns.
+Make sure you've set `COMIC_VINE_API_KEY` in your `.env` file.
 
-### "No comic found" messages
+### Rate Limit Errors
 
-The API occasionally returns offsets with no results. The app automatically retries up to 10 times to find a valid comic.
+**Comic Vine** (420): Wait for rate limit window to expire (200/hour limit)
+**Jikan** (429): Wait 1-2 seconds between requests
+
+### "No comic/anime found" messages
+
+The app automatically retries up to 10 times. If you still see this, click "Randomize" again.
 
 ### Connection timeouts
 
-Check your internet connection and Comic Vine API status. The app has built-in retry logic with 10-second timeouts.
-
-### Missing images or broken image links
-
-Some comics in the database don't have cover images. The app filters these out, but if you see a broken image, click "Randomize" again.
+Check your internet connection and API status. The app has built-in retry logic.
 
 ## API Attribution
 
-This application uses the [Comic Vine API](https://comicvine.gamespot.com/api/).
+### Comic Vine
+- [Comic Vine API](https://comicvine.gamespot.com/api/)
+- Comprehensive comic book database owned by Fandom/GameSpot
+- All comic data and images © their respective publishers
 
-**Comic Vine** is a comprehensive comic book database owned by Fandom/GameSpot that provides data on:
-- Comic book issues, volumes, and series
-- Characters, creators, and publishers
-- Cover images and detailed metadata
-
-All comic data and images are © their respective publishers and creators.
+### Jikan (MyAnimeList)
+- [Jikan API](https://jikan.moe/)
+- Unofficial MyAnimeList API
+- All anime data courtesy of [MyAnimeList](https://myanimelist.net/)
 
 ## Contributing
 
@@ -300,26 +301,31 @@ All comic data and images are © their respective publishers and creators.
 
 ## License
 
-This project is for educational purposes. All comic book characters, covers, and related content are © their respective publishers and creators.
+This project is for educational purposes. All comic and anime content are © their respective creators and publishers.
 
 ## Acknowledgments
 
-- Data provided by [Comic Vine](https://comicvine.gamespot.com/) / Fandom
+- Comic data provided by [Comic Vine](https://comicvine.gamespot.com/) / Fandom
+- Anime data provided by [MyAnimeList](https://myanimelist.net/) via [Jikan API](https://jikan.moe/)
 - Built with [Flask](https://flask.palletsprojects.com/)
-- Comic Vine API documentation: [comicvine.gamespot.com/api](https://comicvine.gamespot.com/api/)
-
-## Support
-
-For issues and questions:
-- Check the [Troubleshooting](#troubleshooting) section
-- Review [Comic Vine API Documentation](https://comicvine.gamespot.com/api/documentation)
-- Open an issue in the repository
 
 ## What's New
 
+### v3.0 - Dual Mode: Comics & Anime
+- **Added Anime Mode** - Toggle between comics and anime!
+- **Jikan API Integration** - Access MyAnimeList's anime database
+- **No API Key for Anime** - Anime mode works without any authentication
+- **Sleek Toggle Switch** - Modern UI for switching modes
+- **Dynamic Attribution** - Updates based on current mode
+- **Flexible Configuration** - Comic Vine API key is now optional
+- All existing features maintained (security, error handling, etc.)
+
 ### v2.0 - Comic Vine Migration
-- **Switched from Marvel API to Comic Vine API** - Marvel API is no longer accessible
-- **Multi-publisher support** - Now displays comics from Marvel, DC, Image, Dark Horse, and hundreds more
-- **Enhanced comic title formatting** - Better display of series name, issue number, and title
-- **Improved image selection** - Uses best available image quality
-- All security and code quality improvements from v1.0 maintained
+- Switched from Marvel API to Comic Vine API
+- Multi-publisher support for comics
+- Enhanced comic title formatting
+
+### v1.0 - Initial Release
+- Marvel API support
+- Comprehensive security improvements
+- Rate limiting and error handling

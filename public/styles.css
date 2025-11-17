@@ -24,9 +24,75 @@ h1 {
 .subtitle {
   font-size: 0.9rem;
   color: #cccccc;
-  margin: 0 0 10px 0;
+  margin: 0 0 15px 0;
   text-align: center;
   font-style: italic;
+}
+
+/* Mode Toggle styling */
+.mode-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 10px 0 15px 0;
+}
+
+.mode-label {
+  font-size: 0.95rem;
+  color: #cccccc;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.mode-label.active {
+  color: #e62429;
+}
+
+/* Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #555;
+  transition: 0.3s;
+  border-radius: 26px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #e62429;
+}
+
+input:checked + .slider:before {
+  transform: translateX(24px);
 }
 
 /* Comic container styling */
